@@ -1,0 +1,22 @@
+1. Create a SOAP Project
+
+	- name : BankSOAPService
+	- wsdl-file : BankApp.wsdl ( from attached code /src/main/wsdl )
+
+2. On projects-view of soapUI , right-click on BankSOAPService and select New SOAP MockService
+	- name : BankAppMockService
+
+3. On projects-view of soapUI, right-clic BankSOAPService-> AccountSummarySoapBinding -> getAccountSummary and select Add to Mock Service
+	- select BankAppMockService and press OK
+	- it asks to open response editor.. Press yes
+
+4. On response editor, enter static response XML 
+	- Add some dummy data on the right hand side section
+		
+5. Test with SOAP UI first : 
+	- on BankAppMockService -window press green triangle -button  to start the mock service
+	- Execute a request getAccountSummary and check response
+
+
+
+
