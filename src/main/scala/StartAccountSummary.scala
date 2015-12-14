@@ -4,7 +4,7 @@ import spray.can.Http
 import spray.http.HttpHeaders.RawHeader
 import spray.http._
 import spray.httpx.marshalling.{ToResponseMarshaller, Marshaller}
-import spray.json.DefaultJsonProtocol
+import spray.json.{JsValue, RootJsonFormat, DefaultJsonProtocol}
 import spray.routing._
 import spray.routing.directives.{RouteDirectives}
 import spray.util.LoggingContext
@@ -73,17 +73,23 @@ class AccountServiceDirective(implicit executionContext: ExecutionContext) exten
           get {
             respondWithMediaType(MediaTypes.`application/json`) {
               complete {
-                //            val accountSummary = AccountSummary("12345","Nishant",26)
-                //            println("Creating account summary response")
-                //            val bankAccountActorRef = StartAccountSummary.system.actorOf(Props(new BankAccountActor))
-                //            bankAccountActorRef ! "AccountSummary"
-                //            BankAccountServiceInvoker.getAccountFuture.map{account=>
-                //              println(account)
-                //            }
-
-                HttpResponse(entity = BankAccountServiceInvoker.getAccountSummary)
-
-
+                BankAccountServiceInvoker.getAccountSummary.mapTo[generated.Account].map(account => {
+                  println("Inside map block expression")
+                  println(account)
+                  MyJsonProtocol.AccountSummaryResponseFormat.write(AccountSummaryResponse(account.accountId.get,account.accountType.get,account.balance.get)).toString()
+                })
+              }
+            }
+          }
+        } ~
+        path("getAllCustomers") {
+          get {
+            respondWithMediaType(MediaTypes.`application/json`) {
+              complete {
+                println("Inside getAllCustomers")
+                SampleSlickApplication.getAllCustomers.mapTo[Seq[Customer]].map(customerList => {
+                  CustomerListProtocol.CustomerListFormat.write(CustomerList(customerList.toList)).asJsObject.toString()
+                })
               }
             }
           }
@@ -126,21 +132,15 @@ class AccountServiceDirective(implicit executionContext: ExecutionContext) exten
             }
           }
         } ~
-        path("checkAccountInfo" / IntNumber) { (accountNumber) => {
+        path("getCustomerById" / IntNumber) { (id) => {
           get {
-
             complete {
-              println(accountNumber)
-
-              val validAccountSummary = ValidAccountSummary("Account Summary is valid")
-
-              val response = MyJsonProtocol.ValidAccountSummaryFormat.write(validAccountSummary)
-
-              HttpResponse(entity = response.toString())
+              println("Customer id is : " + id)
+              SampleSlickApplication.getCustomerById(id).mapTo[Customer].map(customer => {
+                MyJsonProtocol.CustomerResponseFormat.write(customer).asJsObject.toString()
+              })
             }
           }
-
-
         }
         }
     }
@@ -156,6 +156,10 @@ class AccountServiceDirective(implicit executionContext: ExecutionContext) exten
     implicit val ValidAccountSummaryFormat = jsonFormat1(ValidAccountSummary)
     implicit val AccountFormat = jsonFormat3(Account)
     implicit val AccountSummaryResponseFormat = jsonFormat3(AccountSummaryResponse)
+    implicit val AccountResponseFormat = jsonFormat3(generated.Account)
+    implicit val CustomerResponseFormat = jsonFormat5(Customer)
+
+
   }
 
   case class ValidAccountSummary(message: String)
